@@ -1,0 +1,43 @@
+name: Export Docker Image
+on:
+  workflow_dispatch:
+    inputs:
+      image_name:
+        description: "Docker镜像名称（例如：redis）"
+        required: true
+        default: "redis"
+      image_tag:
+        description: "Docker镜像标签（例如：8.6.2）"
+        required: true
+        default: "8.6.2"
+      architecture:
+        description: "目标架构（例如：linux/arm64）"
+        required: true
+        default: "linux/arm64"
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Pull Docker image
+        run: |
+          docker pull --platform ${{ inputs.architecture }} ${{ inputs.image_name }}:${{ inputs.image_tag }}
+
+      - name: Save image to tar file
+        run: |
+          FILENAME="${{ inputs.image_name }}-${{ inputs.image_tag }}-${{ inputs.architecture }}.tar"
+          docker save -o "$FILENAME" ${{ inputs.image_name }}:${{ inputs.image_tag }}
+          echo "FILENAME=$FILENAME" >> $GITHUB_ENV
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.FILENAME }}
+          path: ${{ env.FILENAME }}
+          retention-days: 7
