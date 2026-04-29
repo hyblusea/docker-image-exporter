@@ -5,11 +5,11 @@ on:
       image_name:
         description: "Docker镜像名称（例如：redis）"
         required: true
-        default: "redis"
+        default: "node"
       image_tag:
         description: "Docker镜像标签（例如：8.6.2）"
         required: true
-        default: "8.6.2"
+        default: "24.15.0"
       architecture:
         description: "目标架构（例如：linux/arm64）"
         required: true
