@@ -31,7 +31,9 @@ jobs:
 
       - name: Save image to tar file
         run: |
-          FILENAME="${{ inputs.image_name }}-${{ inputs.image_tag }}-${{ inputs.architecture }}.tar"
+          # 关键修正：把架构中的斜杠替换为横杠，避免路径错误
+          SAFE_ARCH=$(echo "${{ inputs.architecture }}" | tr '/' '-')
+          FILENAME="${{ inputs.image_name }}-${{ inputs.image_tag }}-${SAFE_ARCH}.tar"
           docker save -o "$FILENAME" ${{ inputs.image_name }}:${{ inputs.image_tag }}
           echo "FILENAME=$FILENAME" >> $GITHUB_ENV
 
