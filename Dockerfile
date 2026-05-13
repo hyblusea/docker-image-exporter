@@ -1,5 +1,6 @@
 FROM eclipse-temurin:17-jre-jammy
 
+# 从 Apache 官方镜像站下载（GitHub 可以访问）
 ADD https://archive.apache.org/dist/kafka/3.3.2/kafka_2.13-3.3.2.tgz /opt/
 
 RUN tar -zxvf /opt/kafka_2.13-3.3.2.tgz -C /opt/ \
