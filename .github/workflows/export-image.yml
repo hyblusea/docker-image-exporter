@@ -1,20 +1,36 @@
-# 基础镜像（离线可用）
-FROM eclipse-temurin:17-jre-jammy
+name: Build Kafka 3.3.2 Offline Image
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: # 支持手动触发
 
-# 下载 Kafka 3.3.2 (官方二进制)
-ADD https://archive.apache.org/dist/kafka/3.3.2/kafka_2.13-3.3.2.tgz /opt/
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-# 解压、创建目录
-RUN tar -zxvf /opt/kafka_2.13-3.3.2.tgz -C /opt/ \
-    && mv /opt/kafka_2.13-3.3.2 /opt/kafka \
-    && mkdir -p /var/lib/kafka/data /etc/kafka \
-    && rm -rf /opt/kafka_2.13-3.3.2.tgz
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-# 工作目录
-WORKDIR /opt/kafka
+      - name: Build Kafka image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false # 绝对不推送
+          load: true # 加载到本地 Docker
+          tags: 10.144.4.20:85/lib/apache_kafka:3.3.2 # 保留你的 Harbor 标签，导入后直接用
 
-# 对外端口
-EXPOSE 9092 9093 8083
+      - name: Export image to tar file
+        run: |
+          docker save -o apache_kafka_3.3.2_offline.tar 10.144.4.20:85/lib/apache_kafka:3.3.2
+          ls -lh apache_kafka_3.3.2_offline.tar
 
-# 默认启动命令（兼容官方）
-CMD ["/opt/kafka/bin/kafka-server-start.sh", "/opt/kafka/config/server.properties"]
+      - name: Upload image as GitHub artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: apache_kafka_3.3.2_offline
+          path: apache_kafka_3.3.2_offline.tar
+          retention-days: 30 # 保留30天
