@@ -1,40 +1,38 @@
-name: Build Kafka 3.3.2 ARM64 Offline Image
+name: Build and Extract Reporter JAR
+
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Set up QEMU (for ARM64 emulation)
-        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build ARM64 Kafka image
+      - name: Build image to extract JARs
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile
-          push: false
+          file: Dockerfile.reporter
           load: true
-          platforms: linux/arm64 # 强制构建ARM64架构
-          tags: 10.144.4.20:85/lib/apache_kafka:3.3.2-arm64
+          tags: reporter-extract:latest
 
-      - name: Export image to tar file
+      - name: Extract JARs from image
         run: |
-          docker save -o apache_kafka_3.3.2_arm64_offline.tar 10.144.4.20:85/lib/apache_kafka:3.3.2-arm64
-          ls -lh apache_kafka_3.3.2_arm64_offline.tar
+          # 创建容器并复制 JAR 出来
+          docker create --name extractor reporter-extract:latest
+          docker cp extractor:/output ./reporter-jars
+          docker rm extractor
+          echo ">>> 提取的 JAR:"
+          ls -la ./reporter-jars/
 
-      - name: Upload image as GitHub artifact
+      - name: Upload JAR as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: apache_kafka_3.3.2_arm64_offline
-          path: apache_kafka_3.3.2_arm64_offline.tar
-          retention-days: 30
+          name: reporter-jars
+          path: ./reporter-jars/
+          retention-days: 7
