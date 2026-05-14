@@ -1,17 +1,16 @@
-# 使用支持多架构的JRE基础镜像
 FROM eclipse-temurin:17-jre-jammy
 
-# 下载 Kafka 3.3.2 官方二进制包（跨架构通用）
-ADD https://archive.apache.org/dist/kafka/3.3.2/kafka_2.13-3.3.2.tgz /opt/
+# 用 Confluent 社区版镜像替代
+# 或者手动下载 Confluent 版本的 Kafka
+ADD https://packages.confluent.io/archive/7.3/confluent-community-7.3.2.tar.gz /opt/
 
-RUN tar -zxvf /opt/kafka_2.13-3.3.2.tgz -C /opt/ \
-    && mv /opt/kafka_2.13-3.3.2 /opt/kafka \
-    && mkdir -p /var/lib/kafka/data /etc/kafka \
-    && rm -rf /opt/kafka_2.13-3.3.2.tgz
+RUN tar -zxvf /opt/confluent-community-7.3.2.tar.gz -C /opt/ \
+    && mv /opt/confluent-7.3.2 /opt/kafka \
+    && mkdir -p /var/lib/kafka/data \
+    && rm -rf /opt/confluent-community-7.3.2.tar.gz
 
 WORKDIR /opt/kafka
 
 EXPOSE 9092 9093 8083
 
-# 修复：使用绝对路径启动，避免架构问题
-CMD ["/opt/kafka/bin/kafka-server-start.sh", "/opt/kafka/config/server.properties"]
+CMD ["/opt/kafka/bin/kafka-server-start.sh", "/opt/kafka/etc/kafka/server.properties"]
